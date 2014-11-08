@@ -59,33 +59,41 @@ function pullChanges() {
   });
 }
 
+function removeLayer(path) {
+  for(i = 0; i < layers.length; i++) {
+    if (layers[i].path == path) {
+      map.removeLayer(layers[i].layer);
+      layers.splice(i, 1);
+      break;
+    }
+  }
+}
+
+function addLayer(path) {
+  client.readFile(path, function(error, data) {
+    if(error) {
+      return showError(error);
+    }
+
+    layer = omnivore.gpx.parse(data);
+    layer.addTo(map);
+    layers.push({'layer': layer, 'path': path});
+    calcBounds();
+  });
+}
 
 function processChanges(changes) {
   changes.forEach(function(change) {
     if (change.wasRemoved) {
       console.log('Removed: ' + change.path);
-      for(i = 0; i < layers.length; i++) {
-        if (layers[i].path == change.path) {
-          map.removeLayer(layers[i].layer);
-          layers.splice(i, 1);
-          calcBounds();
-          break;
-        }
-      }
+      removeLayer(change.path);
+      calcBounds();
     }
     else {
       console.log(change.path);
       if (change.path.substr(-4) == '.gpx') {
-        client.readFile(change.path, function(error, data) {
-          if(error) {
-            return showError(error);
-          }
-
-          layer = omnivore.gpx.parse(data);
-          layer.addTo(map);
-          layers.push({'layer': layer, 'path': change.path});
-          calcBounds();
-        });
+        removeLayer(change.path);
+        addLayer(change.path);
       }
     }
   });
