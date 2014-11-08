@@ -1,7 +1,19 @@
 var client = new Dropbox.Client({ key: '9a666eiuctz1yh4' });
 
 var cursorTag = null;
+var layers = Array();
 
+// Init map
+$('#map').height($(window).height());
+
+var map = L.map('map').setView([51.505, -0.09], 13);
+
+L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+
+// Init Dropbox
 client.authenticate({interactive: false}, function(error, client) {
   if (error) {
     return showError(error);
@@ -38,9 +50,26 @@ function processChanges(changes) {
   changes.forEach(function(change) {
     if (change.wasRemoved) {
       console.log('Removed: ' + change.path);
+      layers.forEach(function(layer) {
+        if (layer.path == change.path) {
+          map.removeLayer(layer.layer);
+        }
+      })
     }
     else {
       console.log(change.path);
+      if (change.path.substr(-4) == '.gpx') {
+        client.readFile(change.path, function(error, data) {
+          if(error) {
+            return showError(error);
+          }
+
+          layer = omnivore.gpx.parse(data);
+          layer.addTo(map);
+          map.fitBounds(layer.getBounds());
+          layers.push({'layer': layer, 'path': change.path});
+        });
+      }
     }
   });
 
