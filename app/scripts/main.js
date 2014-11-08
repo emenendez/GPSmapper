@@ -6,7 +6,9 @@ var layers = Array();
 // Init map
 $('#map').height($(window).height());
 
-var map = L.map('map').setView([51.505, -0.09], 13);
+var defaultCenter = L.latLng(39, -78)
+
+var map = L.map('map').setView(defaultCenter, 13);
 
 L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -33,6 +35,22 @@ client.authenticate({interactive: false}, function(error, client) {
 
 });
 
+function calcBounds() {
+  bounds = null
+  layers.forEach(function(layer) {
+    if (!bounds) {
+      bounds = layer.layer.getBounds();
+    }
+    else {
+      bounds.extend(layer.layer.getBounds());
+    }
+  });
+
+  if (bounds) {
+    map.fitBounds(bounds);
+  }
+}
+
 function pullChanges() {
   client.pullChanges(cursorTag, function(error, changes) {
     if (error) {
@@ -50,11 +68,14 @@ function processChanges(changes) {
   changes.forEach(function(change) {
     if (change.wasRemoved) {
       console.log('Removed: ' + change.path);
-      layers.forEach(function(layer) {
-        if (layer.path == change.path) {
-          map.removeLayer(layer.layer);
+      for(i = 0; i < layers.length; i++) {
+        if (layers[i].path == change.path) {
+          map.removeLayer(layers[i].layer);
+          layers.splice(i, 1);
+          calcBounds();
+          break;
         }
-      })
+      }
     }
     else {
       console.log(change.path);
@@ -66,8 +87,8 @@ function processChanges(changes) {
 
           layer = omnivore.gpx.parse(data);
           layer.addTo(map);
-          map.fitBounds(layer.getBounds());
           layers.push({'layer': layer, 'path': change.path});
+          calcBounds();
         });
       }
     }
