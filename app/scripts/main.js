@@ -4,10 +4,7 @@ var cursorTag = null;
 var layers = Array();
 
 // Init map
-$('#map').height($(window).height());
-
 var defaultCenter = L.latLng(39, -78)
-
 var map = L.map('map').setView(defaultCenter, 13);
 
 L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
