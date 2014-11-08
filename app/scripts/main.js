@@ -34,7 +34,7 @@ client.authenticate({interactive: false}, function(error, client) {
 });
 
 function pullChanges() {
-  client.pullChanges(function(error, changes) {
+  client.pullChanges(cursorTag, function(error, changes) {
     if (error) {
       return showError(error);
     }
