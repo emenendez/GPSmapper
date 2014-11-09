@@ -1,41 +1,15 @@
-var client = new Dropbox.Client({ key: '9a666eiuctz1yh4' });
+'use strict';
 
-var cursorTag = null;
-var layers = Object();
-
-// Init map
-var defaultCenter = L.latLng(39, -78)
-var map = L.map('map').setView(defaultCenter, 13);
-
-L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
-}).addTo(map);
-
-// Init Dropbox
-client.authenticate({interactive: false}, function(error, client) {
-  if (error) {
-    return showError(error);
-  }
-
-  if (client.isAuthenticated()) {
-  	run(client);
-  }
-  else {
-  	client.authenticate(function(error, client) {
-  		if (error) {
-  			return showError(error);
-  		}
-  		run(client);
-  	});
-  }
-
-});
+// Display errors
+function showError(error) {
+  console.log(error);
+}
 
 // Fit the map to all current layers
 function calcBounds() {
   // Iterate over all layers and calculate maximum bounds
-  bounds = null;
-  for (layer in layers) {
+  var bounds = null;
+  for (var layer in layers) {
     if (!bounds) {
       bounds = layers[layer].getBounds();
     }
@@ -47,20 +21,6 @@ function calcBounds() {
   if (bounds) {
     map.fitBounds(bounds);
   }
-}
-
-// Pull latest changes from Dropbox, apply to map, and wait for the next change
-function pullChanges() {
-  // Get changes since last call
-  client.pullChanges(cursorTag, function(error, changes) {
-    if (error) {
-      return showError(error);
-    }
-    // Update the cursor for the next call
-    cursorTag = changes.cursorTag;
-    // Apply the changes to the map
-    processChanges(changes.changes);
-  });
 }
 
 // Remove a layer from the map, if it exists
@@ -79,7 +39,7 @@ function addLayer(path) {
       return showError(error);
     }
     // Parse GPX into a layer
-    layer = omnivore.gpx.parse(data);
+    var layer = omnivore.gpx.parse(data);
     // Add to map
     layer.addTo(map);
     // Add to layers object
@@ -87,35 +47,6 @@ function addLayer(path) {
     // Fit the map
     calcBounds();
   });
-}
-
-// Iterate through a list of changes from Dropbox, apply to map, and wait for next change
-function processChanges(changes) {
-  changes.forEach(function(change) {
-    // Only process .gpx files
-    if (change.path.substr(-4) == '.gpx') {
-      if (change.wasRemoved) {
-        // Remove deleted file from map and fit map
-        removeLayer(change.path);
-        calcBounds();
-      }
-      else {
-        // Remove file if it already existed
-        removeLayer(change.path); 
-        // Add file to map and fit map
-        addLayer(change.path);
-      }
-    }
-  });
-
-  // Wait for next change
-  if (changes.shouldBackOff) {
-    interval = 5000;
-  }
-  else {
-    interval = 0;
-  }
-  setTimeout(poll, interval);
 }
 
 // Wait for next change and process
@@ -137,12 +68,88 @@ function poll() {
   });
 }
 
+// Iterate through a list of changes from Dropbox, apply to map, and wait for next change
+function processChanges(changes) {
+  changes.forEach(function(change) {
+    // Only process .gpx files
+    if (change.path.substr(-4) === '.gpx') {
+      if (change.wasRemoved) {
+        // Remove deleted file from map and fit map
+        removeLayer(change.path);
+        calcBounds();
+      }
+      else {
+        // Remove file if it already existed
+        removeLayer(change.path); 
+        // Add file to map and fit map
+        addLayer(change.path);
+      }
+    }
+  });
+
+  // Wait for next change
+  var interval = 0;
+  if (changes.shouldBackOff) {
+    interval = 5000;
+  }
+  setTimeout(poll, interval);
+}
+
+// Pull latest changes from Dropbox, apply to map, and wait for the next change
+function pullChanges() {
+  // Get changes since last call
+  client.pullChanges(cursorTag, function(error, changes) {
+    if (error) {
+      return showError(error);
+    }
+    // Update the cursor for the next call
+    cursorTag = changes.cursorTag;
+    // Apply the changes to the map
+    processChanges(changes.changes);
+  });
+}
+
 // Start poll-pull-process loop
-function run(client) {
+function run(newClient) {
+  // Set global authenticated client
+  client = newClient;
   pullChanges();
 }
 
-// Display errors
-function showError(error) {
-	console.log(error);
-}
+// Globals
+var client;
+var cursorTag = null;
+var layers = {};
+var map;
+
+// Run when page is ready
+$(function() {
+  var newClient = new Dropbox.Client({ key: '9a666eiuctz1yh4' });
+
+  // Init map
+  var defaultCenter = L.latLng(39, -78);
+  map = L.map('map').setView(defaultCenter, 13);
+
+  L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+  }).addTo(map);
+
+  // Init Dropbox
+  newClient.authenticate({interactive: false}, function(error, client) {
+    if (error) {
+      return showError(error);
+    }
+
+    if (client.isAuthenticated()) {
+      run(client);
+    }
+    else {
+      client.authenticate(function(error, client) {
+        if (error) {
+          return showError(error);
+        }
+        run(client);
+      });
+    }
+  });
+});
