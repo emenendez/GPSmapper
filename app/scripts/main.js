@@ -127,6 +127,7 @@ $(function() {
   // Hack to redirect to HTTPS
   if ((window.location.host === 'emenendez.github.io') && (window.location.protocol !== 'https:')) {
     window.location.protocol = 'https';
+    return;
   }
 
   var newClient = new Dropbox.Client({ key: '9a666eiuctz1yh4' });
