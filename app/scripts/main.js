@@ -1,7 +1,7 @@
 var client = new Dropbox.Client({ key: '9a666eiuctz1yh4' });
 
 var cursorTag = null;
-var layers = Array();
+var layers = Object();
 
 // Init map
 var defaultCenter = L.latLng(39, -78)
@@ -31,107 +31,118 @@ client.authenticate({interactive: false}, function(error, client) {
 
 });
 
+// Fit the map to all current layers
 function calcBounds() {
-  bounds = null
-  layers.forEach(function(layer) {
+  // Iterate over all layers and calculate maximum bounds
+  bounds = null;
+  for (layer in layers) {
     if (!bounds) {
-      bounds = layer.layer.getBounds();
+      bounds = layers[layer].getBounds();
     }
     else {
-      bounds.extend(layer.layer.getBounds());
+      bounds.extend(layers[layer].getBounds());
     }
-  });
-
+  }
+  // Fit the map to the max bounds
   if (bounds) {
     map.fitBounds(bounds);
   }
 }
 
+// Pull latest changes from Dropbox, apply to map, and wait for the next change
 function pullChanges() {
+  // Get changes since last call
   client.pullChanges(cursorTag, function(error, changes) {
     if (error) {
       return showError(error);
     }
-
+    // Update the cursor for the next call
     cursorTag = changes.cursorTag;
-
+    // Apply the changes to the map
     processChanges(changes.changes);
   });
 }
 
+// Remove a layer from the map, if it exists
 function removeLayer(path) {
-  for(i = 0; i < layers.length; i++) {
-    if (layers[i].path == path) {
-      map.removeLayer(layers[i].layer);
-      layers.splice(i, 1);
-      break;
-    }
+  if (layers[path]) {
+    map.removeLayer(layers[path]);
+    delete layers[path];
   }
 }
 
+// Add a layer to the map and adjust the map fit accordingly
 function addLayer(path) {
+  // Read the file from Dropbox
   client.readFile(path, function(error, data) {
     if(error) {
       return showError(error);
     }
-
+    // Parse GPX into a layer
     layer = omnivore.gpx.parse(data);
+    // Add to map
     layer.addTo(map);
-    layers.push({'layer': layer, 'path': path});
+    // Add to layers object
+    layers[path] = layer;
+    // Fit the map
     calcBounds();
   });
 }
 
+// Iterate through a list of changes from Dropbox, apply to map, and wait for next change
 function processChanges(changes) {
   changes.forEach(function(change) {
-    if (change.wasRemoved) {
-      console.log('Removed: ' + change.path);
-      removeLayer(change.path);
-      calcBounds();
-    }
-    else {
-      console.log(change.path);
-      if (change.path.substr(-4) == '.gpx') {
+    // Only process .gpx files
+    if (change.path.substr(-4) == '.gpx') {
+      if (change.wasRemoved) {
+        // Remove deleted file from map and fit map
         removeLayer(change.path);
+        calcBounds();
+      }
+      else {
+        // Remove file if it already existed
+        removeLayer(change.path); 
+        // Add file to map and fit map
         addLayer(change.path);
       }
     }
   });
 
+  // Wait for next change
   if (changes.shouldBackOff) {
     interval = 5000;
   }
   else {
     interval = 0;
   }
-
   setTimeout(poll, interval);
 }
 
+// Wait for next change and process
 function poll() {
-  console.log('Polling for changes...');
+  // Long-poll for changes
   client.pollForChanges(cursorTag, function(error, result) {
     if (error) {
       return showError(error);
     }
 
     if (result.hasChanges) {
-      console.log('Changes detected.');
+      // Changes detected; pull and process
       pullChanges();
     }
     else {
-      console.log('No changes detected.');
+      // No changes detected; poll again.
       setTimeout(poll, result.retryAfter * 1000);
     }
   });
 }
 
+// Start poll-pull-process loop
 function run(client) {
-	console.log('running');
-
   pullChanges();
 }
 
+// Display errors
 function showError(error) {
 	console.log(error);
 }
