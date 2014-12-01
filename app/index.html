@@ -52,8 +52,13 @@
     ga('send', 'pageview');
     </script>
 
-    <!-- build:js({app,.tmp}) scripts/main.js -->
+    <!-- build:js(.) scripts/plugins.js -->
+    <!-- bower:js -->
     <script src="bower_components/leaflet-coordinates/dist/Leaflet.Coordinates-0.1.3.min.js"></script>
+    <!-- endbower -->
+    <!-- endbuild -->    
+
+    <!-- build:js({app,.tmp}) scripts/main.js -->
     <script src="scripts/main.js"></script>
     <!-- endbuild -->
 </body>
