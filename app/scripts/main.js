@@ -144,7 +144,12 @@ $(function() {
     'Esri Imagery': L.tileLayer.provider('Esri.WorldImagery'),
     'MapQuest Imagery': L.tileLayer.provider('MapQuestOpen.Aerial'),
   };
-  baseMaps['Esri Topo Map'].addTo(map);
+
+  // Add first layer to map
+  for(var baseMap in baseMaps) {
+    baseMaps[baseMap].addTo(map);
+    break;
+  }
 
   // Add layers control
   L.control.layers(baseMaps).addTo(map);
