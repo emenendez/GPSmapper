@@ -154,6 +154,9 @@ $(function() {
   // Add layers control
   L.control.layers(baseMaps).addTo(map);
 
+  // Add full screen control
+  L.control.fullscreen().addTo(map);
+
   // Init Dropbox
   newClient.authenticate({interactive: false}, function(error, client) {
     if (error) {
