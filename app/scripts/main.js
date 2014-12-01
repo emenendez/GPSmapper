@@ -1,5 +1,16 @@
 'use strict';
 
+// Constants
+// from http://colorbrewer2.org/
+var colors = [
+  '#e31a1c',
+  '#1f78b4',
+  '#33a02c',
+  '#ff7f00',
+  '#6a3d9a',
+  '#b15928',
+];
+
 // Display errors
 function showError(error) {
   console.log(error);
@@ -38,12 +49,28 @@ function addLayer(path) {
     if(error) {
       return showError(error);
     }
+
+    // Choose color based on folder
+    var folder = path.substr(0, path.lastIndexOf('/'));
+    var folderIndex = folders.indexOf(folder);
+    if (folderIndex === -1) {
+      folderIndex = folders.push(folder) - 1;
+    }
+    var color = colors[folderIndex % colors.length];
+
     // Parse GPX into a layer
     var layer = omnivore.gpx.parse(data).bindLabel(path.substr(1), {direction: 'auto'});
+    layer.setStyle({
+      color: color,
+      opacity: 0.7,
+    });
+
     // Add to map
     layer.addTo(map);
+
     // Add to layers object
     layers[path] = layer;
+
     // Fit the map
     calcBounds();
   });
@@ -120,6 +147,7 @@ function run(newClient) {
 var client;
 var cursorTag = null;
 var layers = {};
+var folders = [];
 var map;
 
 // Run when page is ready
