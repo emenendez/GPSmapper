@@ -39,7 +39,7 @@ function addLayer(path) {
       return showError(error);
     }
     // Parse GPX into a layer
-    var layer = omnivore.gpx.parse(data).bindLabel(path.substr(1));
+    var layer = omnivore.gpx.parse(data).bindLabel(path.substr(1), {direction: 'auto'});
     // Add to map
     layer.addTo(map);
     // Add to layers object
