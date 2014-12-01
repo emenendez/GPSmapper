@@ -157,6 +157,14 @@ $(function() {
   // Add full screen control
   L.control.fullscreen().addTo(map);
 
+  // Add coordinates display
+  L.control.coordinates({
+    position: 'bottomleft',
+    labelTemplateLat: 'Latitude: {y}', //optional default "Lat: {y}"
+    labelTemplateLng: 'Longitude: {x}', //optional default "Lng: {x}"
+    useLatLngOrder: true //ordering of labels, default false-> lng-lat
+  }).addTo(map);
+
   // Init Dropbox
   newClient.authenticate({interactive: false}, function(error, client) {
     if (error) {
