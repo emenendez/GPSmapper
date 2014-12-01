@@ -136,9 +136,7 @@ $(function() {
   var defaultCenter = L.latLng(39, -78);
   map = L.map('map').setView(defaultCenter, 13);
 
-  L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
-  }).addTo(map);
+  L.tileLayer.provider('Esri.WorldTopoMap').addTo(map);
 
   // Init Dropbox
   newClient.authenticate({interactive: false}, function(error, client) {
