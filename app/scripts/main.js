@@ -136,7 +136,18 @@ $(function() {
   var defaultCenter = L.latLng(39, -78);
   map = L.map('map').setView(defaultCenter, 13);
 
-  L.tileLayer.provider('Esri.WorldTopoMap').addTo(map);
+  // Set up layers
+  var baseMaps = {
+    'Esri Topo Map': L.tileLayer.provider('Esri.WorldTopoMap'),
+    'Esri Street Map': L.tileLayer.provider('Esri.WorldStreetMap'),
+    'OpenStreetMap': L.tileLayer.provider('OpenStreetMap.Mapnik'),
+    'Esri Imagery': L.tileLayer.provider('Esri.WorldImagery'),
+    'MapQuest Imagery': L.tileLayer.provider('MapQuestOpen.Aerial'),
+  };
+  baseMaps['Esri Topo Map'].addTo(map);
+
+  // Add layers control
+  L.control.layers(baseMaps).addTo(map);
 
   // Init Dropbox
   newClient.authenticate({interactive: false}, function(error, client) {
