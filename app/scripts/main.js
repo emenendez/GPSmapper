@@ -185,9 +185,12 @@ $(function() {
   // Add full screen control
   L.control.fullscreen().addTo(map);
 
+  // Add scale
+  L.control.scale().addTo(map);
+
   // Add coordinates display
   L.control.coordinates({
-    position: 'bottomleft',
+    position: 'bottomright',
     labelTemplateLat: 'Latitude: {y}', //optional default "Lat: {y}"
     labelTemplateLng: 'Longitude: {x}', //optional default "Lng: {x}"
     useLatLngOrder: true //ordering of labels, default false-> lng-lat
